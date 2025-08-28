@@ -31,17 +31,19 @@ Actor.main(async () => {
         throw new Error(errorMsg);
     }
 
-    if (!input.profileUrl) {
-        const errorMsg = 'Profile URL is required. Please provide a valid LinkedIn profile URL (e.g., https://www.linkedin.com/in/example-profile)';
+    // Accept both 'profileUrl' and 'url' for compatibility
+    const profileUrl = input.profileUrl || input.url;
+    
+    if (!profileUrl) {
+        const errorMsg = 'Profile URL is required. Please provide a valid LinkedIn profile URL using "profileUrl" or "url" field.';
         logger.error(errorMsg);
         await Actor.pushData({
             error: true,
             message: errorMsg,
             received: input,
-            example: {
-                profileUrl: 'https://www.linkedin.com/in/example-profile',
-                maxPosts: 100,
-                exportFormat: 'excel'
+            examples: {
+                option1: { profileUrl: 'https://www.linkedin.com/in/example-profile' },
+                option2: { url: 'https://www.linkedin.com/in/example-profile' }
             }
         });
         throw new Error(errorMsg);
@@ -49,20 +51,20 @@ Actor.main(async () => {
 
     // Validate LinkedIn profile URL format
     const linkedinUrlPattern = /^https?:\/\/(?:www\.)?linkedin\.com\/in\/[a-zA-Z0-9-]+\/?$/;
-    if (!linkedinUrlPattern.test(input.profileUrl)) {
-        const errorMsg = `Invalid LinkedIn profile URL format: "${input.profileUrl}". Must be in format: https://www.linkedin.com/in/username`;
+    if (!linkedinUrlPattern.test(profileUrl)) {
+        const errorMsg = `Invalid LinkedIn profile URL format: "${profileUrl}". Must be in format: https://www.linkedin.com/in/username`;
         logger.error(errorMsg);
         await Actor.pushData({
             error: true,
             message: errorMsg,
-            receivedUrl: input.profileUrl,
+            receivedUrl: profileUrl,
             expectedFormat: 'https://www.linkedin.com/in/username'
         });
         throw new Error(errorMsg);
     }
 
     logger.info('Starting LinkedIn profile scraping', {
-        profileUrl: input.profileUrl,
+        profileUrl: profileUrl,
         maxPosts: input.maxPosts || 'unlimited'
     });
 
@@ -94,7 +96,7 @@ Actor.main(async () => {
         }
 
         // Scrape the profile
-        const posts = await scraper.scrapeProfile(input.profileUrl);
+        const posts = await scraper.scrapeProfile(profileUrl);
         
         logger.info(`Successfully scraped ${posts.length} posts`);
 
@@ -103,7 +105,7 @@ Actor.main(async () => {
 
         // Push basic data to Apify dataset
         await Actor.pushData({
-            profileUrl: input.profileUrl,
+            profileUrl: profileUrl,
             scrapedAt: new Date().toISOString(),
             totalPosts: posts.length,
             posts: posts.slice(0, 10), // First 10 posts for preview
@@ -140,7 +142,7 @@ Actor.main(async () => {
 
         // Save summary statistics
         const summary = {
-            profileUrl: input.profileUrl,
+            profileUrl: profileUrl,
             profileName: scrapedData.metadata.name,
             totalPosts: posts.length,
             exportFormats: Object.keys(exportResults),
@@ -186,7 +188,7 @@ Actor.main(async () => {
             error: true,
             message: error.message,
             stack: error.stack,
-            profileUrl: input.profileUrl,
+            profileUrl: profileUrl || input.profileUrl || input.url,
             failedAt: new Date().toISOString()
         });
 

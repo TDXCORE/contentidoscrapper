@@ -12,6 +12,14 @@
             "example": "https://www.linkedin.com/in/example-profile",
             "editor": "textfield"
         },
+        "url": {
+            "title": "LinkedIn Profile URL (Alternative field)",
+            "type": "string",
+            "description": "Alternative field for LinkedIn profile URL (same as profileUrl)",
+            "pattern": "^https?:\\/\\/(www\\.)?linkedin\\.com\\/in\\/[a-zA-Z0-9-]+\\/?$",
+            "example": "https://www.linkedin.com/in/example-profile",
+            "editor": "textfield"
+        },
         "email": {
             "title": "LinkedIn Email (Optional)",
             "type": "string",
@@ -122,6 +130,9 @@
             "editor": "checkbox"
         }
     },
-    "required": ["profileUrl"],
+    "anyOf": [
+        { "required": ["profileUrl"] },
+        { "required": ["url"] }
+    ],
     "additionalProperties": false
 }
