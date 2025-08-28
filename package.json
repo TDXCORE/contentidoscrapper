@@ -48,7 +48,7 @@
     "fs-extra": "^11.2.0",
     "dayjs": "^1.11.10",
     "proxy-agent": "^6.4.0",
-    "jigsawstack": "^1.0.0"
+    "jigsawstack": "^0.1.12"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

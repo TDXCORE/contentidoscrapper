@@ -1,11 +1,12 @@
 # Use the official Apify Node.js Actor base image with Node 20
 FROM apify/actor-node:20
 
-# Copy package.json first for better Docker layer caching
-COPY package.json ./
+# Copy package files first for better Docker layer caching
+COPY package*.json ./
 
-# Install dependencies
-RUN npm install --only=production \
+# Install all dependencies (not just production) to ensure all packages are available
+# Use npm ci for faster, reliable, reproducible builds
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi \
  && echo "Installed NPM packages:" \
  && npm list --depth=0 2>/dev/null || echo "Package list completed"
 
