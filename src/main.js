@@ -9,19 +9,56 @@ const logger = new Logger('Actor');
 Actor.main(async () => {
     const input = await Actor.getInput();
     
+    // Log received input for debugging
+    logger.info('Actor started, received input:', input ? 'Input provided' : 'No input provided');
+    if (input) {
+        logger.info('Input keys:', Object.keys(input));
+    }
+    
     // Validate required inputs
     if (!input) {
-        throw new Error('No input provided');
+        const errorMsg = 'No input provided. Please provide a LinkedIn profile URL and configuration.';
+        logger.error(errorMsg);
+        await Actor.pushData({
+            error: true,
+            message: errorMsg,
+            example: {
+                profileUrl: 'https://www.linkedin.com/in/example-profile',
+                maxPosts: 100,
+                exportFormat: 'excel'
+            }
+        });
+        throw new Error(errorMsg);
     }
 
     if (!input.profileUrl) {
-        throw new Error('Profile URL is required');
+        const errorMsg = 'Profile URL is required. Please provide a valid LinkedIn profile URL (e.g., https://www.linkedin.com/in/example-profile)';
+        logger.error(errorMsg);
+        await Actor.pushData({
+            error: true,
+            message: errorMsg,
+            received: input,
+            example: {
+                profileUrl: 'https://www.linkedin.com/in/example-profile',
+                maxPosts: 100,
+                exportFormat: 'excel'
+            }
+        });
+        throw new Error(errorMsg);
     }
 
     // Validate LinkedIn profile URL format
     const linkedinUrlPattern = /^https?:\/\/(?:www\.)?linkedin\.com\/in\/[a-zA-Z0-9-]+\/?$/;
     if (!linkedinUrlPattern.test(input.profileUrl)) {
-        throw new Error('Invalid LinkedIn profile URL format');
+        const errorMsg = `Invalid LinkedIn profile URL format: "${input.profileUrl}". Must be in format: https://www.linkedin.com/in/username`;
+        logger.error(errorMsg);
+        await Actor.pushData({
+            error: true,
+            message: errorMsg,
+            receivedUrl: input.profileUrl,
+            expectedFormat: 'https://www.linkedin.com/in/username'
+        });
+        throw new Error(errorMsg);
     }
 
     logger.info('Starting LinkedIn profile scraping', {
