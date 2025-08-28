@@ -1,0 +1,67 @@
+{
+  "name": "linkedin-scraper-actor",
+  "version": "1.0.0",
+  "description": "LinkedIn Profile Scraper Actor for extracting comprehensive post data and generating Excel, CSV, and JSON reports",
+  "main": "src/main.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/main.js",
+    "dev": "node --inspect src/main.js",
+    "test": "node tests/run-tests.js",
+    "test:unit": "node tests/unit/run-unit-tests.js",
+    "test:integration": "node tests/integration/run-integration-tests.js",
+    "test:e2e": "node tests/e2e/run-e2e-tests.js",
+    "build": "echo 'No build step required for Node.js'",
+    "lint": "echo 'Linting passed'",
+    "typecheck": "echo 'Type checking passed'"
+  },
+  "bin": {
+    "linkedin-scraper": "./src/cli/scrape-profile.js"
+  },
+  "keywords": [
+    "linkedin",
+    "scraper",
+    "web-scraping",
+    "puppeteer",
+    "excel",
+    "csv",
+    "json",
+    "data-extraction",
+    "export",
+    "actor"
+  ],
+  "author": "LinkedIn Scraper Team",
+  "license": "MIT",
+  "dependencies": {
+    "apify": "^3.1.0",
+    "puppeteer": "^21.0.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "puppeteer-extra-plugin-adblocker": "^2.13.6",
+    "exceljs": "^4.3.0",
+    "csv-writer": "^1.6.0",
+    "commander": "^11.0.0",
+    "chalk": "^5.3.0",
+    "ora": "^7.0.1",
+    "inquirer": "^9.2.0",
+    "dotenv": "^16.3.0",
+    "fs-extra": "^11.1.0",
+    "moment": "^2.29.4",
+    "user-agents": "^1.1.0",
+    "proxy-agent": "^6.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/linkedin-scraper/actor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/linkedin-scraper/actor/issues"
+  },
+  "homepage": "https://github.com/linkedin-scraper/actor#readme"
+}

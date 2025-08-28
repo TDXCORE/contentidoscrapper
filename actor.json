@@ -1,0 +1,42 @@
+{
+    "actorSpecification": 1,
+    "name": "linkedin-content-extractor",
+    "version": "1.0.0",
+    "buildTag": "latest",
+    "environmentVariables": {},
+    "dockerfile": "./Dockerfile",
+    "readme": "./README.md",
+    "input": "./input_schema.json",
+    "storages": {
+        "dataset": {
+            "actorSpecification": 1,
+            "title": "LinkedIn Posts Data",
+            "description": "Extracted LinkedIn posts with engagement metrics and metadata",
+            "views": {
+                "posts": {
+                    "title": "Posts Overview",
+                    "description": "Basic information about extracted posts",
+                    "columns": [
+                        {
+                            "key": "profileUrl",
+                            "label": "Profile URL"
+                        },
+                        {
+                            "key": "totalPosts",
+                            "label": "Total Posts"
+                        },
+                        {
+                            "key": "profileName",
+                            "label": "Profile Name"
+                        },
+                        {
+                            "key": "scrapedAt",
+                            "label": "Scraped At"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "platform": "linux/amd64"
+}

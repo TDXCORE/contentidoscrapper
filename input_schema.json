@@ -1,0 +1,127 @@
+{
+    "title": "LinkedIn Content Extractor Input Schema",
+    "description": "Input configuration for extracting LinkedIn profile posts and generating comprehensive reports",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "profileUrl": {
+            "title": "LinkedIn Profile URL",
+            "type": "string",
+            "description": "The LinkedIn profile URL to scrape (e.g., https://www.linkedin.com/in/username/)",
+            "pattern": "^https?:\\/\\/(www\\.)?linkedin\\.com\\/in\\/[a-zA-Z0-9-]+\\/?$",
+            "example": "https://www.linkedin.com/in/example-profile",
+            "editor": "textfield"
+        },
+        "email": {
+            "title": "LinkedIn Email (Optional)",
+            "type": "string",
+            "description": "LinkedIn account email for authenticated scraping (provides more complete data)",
+            "format": "email",
+            "editor": "textfield",
+            "isSecret": true
+        },
+        "password": {
+            "title": "LinkedIn Password (Optional)",
+            "type": "string",
+            "description": "LinkedIn account password for authenticated scraping",
+            "editor": "textfield",
+            "isSecret": true
+        },
+        "maxPosts": {
+            "title": "Maximum Posts to Scrape",
+            "type": "integer",
+            "description": "Maximum number of posts to scrape (leave empty for unlimited)",
+            "minimum": 1,
+            "maximum": 10000,
+            "example": 100,
+            "editor": "number"
+        },
+        "exportFormat": {
+            "title": "Export Format",
+            "type": "string",
+            "description": "Format for exporting the scraped data",
+            "default": "all",
+            "enum": ["excel", "csv", "json", "all"],
+            "enumTitles": ["Excel (.xlsx)", "CSV (.csv)", "JSON (.json)", "All Formats"],
+            "editor": "select"
+        },
+        "separateFiles": {
+            "title": "Create Separate Files",
+            "type": "boolean",
+            "description": "Create separate files for different data types (posts, media, hashtags, etc.)",
+            "default": false,
+            "editor": "checkbox"
+        },
+        "includeMedia": {
+            "title": "Include Media Information",
+            "type": "boolean",
+            "description": "Include media file information in exports",
+            "default": true,
+            "editor": "checkbox"
+        },
+        "includeEngagement": {
+            "title": "Include Engagement Metrics",
+            "type": "boolean",
+            "description": "Include detailed engagement analysis and metrics",
+            "default": true,
+            "editor": "checkbox"
+        },
+        "includeHashtags": {
+            "title": "Include Hashtag Analysis",
+            "type": "boolean",
+            "description": "Include hashtag usage analysis",
+            "default": true,
+            "editor": "checkbox"
+        },
+        "includeMentions": {
+            "title": "Include Mentions",
+            "type": "boolean",
+            "description": "Include @ mentions in posts",
+            "default": true,
+            "editor": "checkbox"
+        },
+        "headless": {
+            "title": "Run in Headless Mode",
+            "type": "boolean",
+            "description": "Run browser in headless mode (recommended for production)",
+            "default": true,
+            "editor": "checkbox"
+        },
+        "delay": {
+            "title": "Request Delay (ms)",
+            "type": "integer",
+            "description": "Delay between requests in milliseconds to avoid rate limiting",
+            "minimum": 500,
+            "maximum": 10000,
+            "default": 2000,
+            "editor": "number"
+        },
+        "maxRetries": {
+            "title": "Maximum Retries",
+            "type": "integer",
+            "description": "Maximum number of retries for failed operations",
+            "minimum": 1,
+            "maximum": 10,
+            "default": 3,
+            "editor": "number"
+        },
+        "timeout": {
+            "title": "Page Timeout (ms)",
+            "type": "integer",
+            "description": "Page load timeout in milliseconds",
+            "minimum": 5000,
+            "maximum": 120000,
+            "default": 30000,
+            "editor": "number"
+        },
+        "antiDetection": {
+            "title": "Enable Anti-Detection",
+            "type": "boolean",
+            "description": "Use stealth techniques to avoid detection",
+            "default": true,
+            "editor": "checkbox"
+        }
+    },
+    "required": ["profileUrl"],
+    "additionalProperties": false
+}
