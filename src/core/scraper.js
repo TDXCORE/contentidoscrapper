@@ -46,59 +46,201 @@ export class LinkedInScraper {
 
   async login(credentials) {
     try {
-      this.logger.info('Attempting to log in to LinkedIn...');
+      this.logger.info('Attempting to log in to LinkedIn with enhanced techniques...');
 
       if (!credentials.email || !credentials.password) {
         throw new Error('Email and password are required for LinkedIn login');
       }
 
+      // First visit LinkedIn homepage to establish session
+      await this.browserManager.navigateToPage('https://www.linkedin.com', 'networkidle0');
+      await this.browserManager.humanLikeDelay(2000, 4000);
+
+      // Human-like browsing behavior before login
+      await this.simulateHumanBrowsing();
+
       // Navigate to LinkedIn login page
       await this.browserManager.navigateToPage('https://www.linkedin.com/login');
+      await this.browserManager.humanLikeDelay(1500, 3000);
       
-      // Wait for login form
-      await this.browserManager.waitForSelector('#username', { timeout: 10000 });
+      // Wait for login form with multiple selectors
+      const usernameField = await this.browserManager.waitForSelector('#username', { timeout: 15000 });
+      if (!usernameField) {
+        throw new Error('Login form not found - LinkedIn may have changed their layout');
+      }
+
+      // Simulate human typing behavior for email
+      await this.humanLikeTyping('#username', credentials.email);
+      await this.browserManager.humanLikeDelay(800, 1500);
       
-      // Fill in credentials
-      await this.browserManager.page.type('#username', credentials.email, { delay: 100 });
-      await this.browserManager.humanLikeDelay(500, 1500);
+      // Simulate human typing behavior for password
+      await this.humanLikeTyping('#password', credentials.password);
+      await this.browserManager.humanLikeDelay(1000, 2000);
       
-      await this.browserManager.page.type('#password', credentials.password, { delay: 100 });
-      await this.browserManager.humanLikeDelay(500, 1500);
+      // Look for submit button with multiple possible selectors
+      const submitSelectors = [
+        'button[type="submit"]',
+        '.login__form_action_container button',
+        '[data-litms-control-urn*="login-submit"]'
+      ];
       
-      // Click login button
-      await this.browserManager.page.click('button[type="submit"]');
+      let submitButton = null;
+      for (const selector of submitSelectors) {
+        submitButton = await this.browserManager.page.$(selector);
+        if (submitButton) break;
+      }
       
-      // Wait for navigation or CAPTCHA/2FA
-      await this.browserManager.humanLikeDelay(3000, 5000);
+      if (!submitButton) {
+        throw new Error('Submit button not found - LinkedIn may have changed their layout');
+      }
+
+      // Click login button with human-like behavior
+      await this.browserManager.page.evaluate((button) => {
+        button.scrollIntoView();
+      }, submitButton);
       
-      const currentUrl = await this.browserManager.getCurrentUrl();
+      await this.browserManager.humanLikeDelay(500, 1000);
+      await submitButton.click();
       
-      // Check if login was successful
+      // Wait for navigation with extended timeout for potential challenges
+      await this.browserManager.humanLikeDelay(3000, 6000);
+      
+      let currentUrl = await this.browserManager.getCurrentUrl();
+      this.logger.info(`After login attempt, current URL: ${currentUrl.substring(0, 50)}...`);
+      
+      // Handle different post-login scenarios
       if (currentUrl.includes('/feed') || currentUrl.includes('/in/')) {
         this.isAuthenticated = true;
         this.logger.info('Successfully logged in to LinkedIn');
         return true;
-      } else if (currentUrl.includes('challenge')) {
-        throw new Error('CAPTCHA or security challenge detected. Please solve manually or use a different account.');
-      } else if (currentUrl.includes('login')) {
-        throw new Error('Login failed. Please check your credentials.');
+      } 
+      
+      // Handle CAPTCHA/challenge pages
+      if (currentUrl.includes('challenge') || currentUrl.includes('captcha')) {
+        this.logger.warn('CAPTCHA or security challenge detected, waiting for resolution...');
+        
+        // Wait longer for manual resolution or automatic bypass
+        for (let i = 0; i < 12; i++) { // Wait up to 2 minutes
+          await this.browserManager.humanLikeDelay(8000, 12000);
+          currentUrl = await this.browserManager.getCurrentUrl();
+          
+          if (currentUrl.includes('/feed') || currentUrl.includes('/in/')) {
+            this.isAuthenticated = true;
+            this.logger.info('Successfully bypassed challenge and logged in to LinkedIn');
+            return true;
+          }
+        }
+        
+        throw new Error('CAPTCHA or security challenge could not be resolved automatically');
       }
       
-      // Handle potential 2FA or additional verification
-      await this.browserManager.humanLikeDelay(5000);
-      const finalUrl = await this.browserManager.getCurrentUrl();
+      // Handle 2FA or email verification
+      if (currentUrl.includes('add-phone') || currentUrl.includes('verify') || currentUrl.includes('checkpoint')) {
+        this.logger.warn('Additional verification required, attempting to continue...');
+        
+        // Try to skip phone verification if possible
+        const skipButtons = await this.browserManager.page.$$('button[data-litms-control-urn*="skip"], a[href*="skip"], .secondary-action');
+        if (skipButtons.length > 0) {
+          await skipButtons[0].click();
+          await this.browserManager.humanLikeDelay(2000, 4000);
+        }
+        
+        // Wait for final redirect
+        for (let i = 0; i < 10; i++) {
+          await this.browserManager.humanLikeDelay(5000, 8000);
+          currentUrl = await this.browserManager.getCurrentUrl();
+          
+          if (currentUrl.includes('/feed') || currentUrl.includes('/in/')) {
+            this.isAuthenticated = true;
+            this.logger.info('Successfully completed additional verification and logged in');
+            return true;
+          }
+        }
+        
+        this.logger.warn('Additional verification could not be completed automatically');
+      }
       
-      if (finalUrl.includes('/feed') || finalUrl.includes('/in/')) {
+      // Check one more time after delays
+      currentUrl = await this.browserManager.getCurrentUrl();
+      if (currentUrl.includes('/feed') || currentUrl.includes('/in/')) {
         this.isAuthenticated = true;
-        this.logger.info('Successfully logged in to LinkedIn (with additional verification)');
+        this.logger.info('Login successful after extended verification process');
         return true;
       }
       
-      throw new Error('Login process completed but authentication status unclear');
+      if (currentUrl.includes('login')) {
+        throw new Error('Login failed. Please check your credentials or try again later.');
+      }
+      
+      throw new Error(`Login process unclear. Final URL: ${currentUrl}`);
       
     } catch (error) {
       this.logger.error('LinkedIn login failed:', error.message);
       throw error;
+    }
+  }
+
+  async simulateHumanBrowsing() {
+    try {
+      // Simulate reading the page
+      await this.browserManager.humanLikeDelay(2000, 4000);
+      
+      // Random scroll to simulate reading
+      const scrollDistance = Math.random() * 500 + 200;
+      await this.browserManager.humanLikeScroll(scrollDistance);
+      
+      // Move mouse randomly
+      await this.browserManager.page.mouse.move(
+        Math.random() * 800 + 200,
+        Math.random() * 600 + 200
+      );
+      
+      await this.browserManager.humanLikeDelay(1000, 2000);
+    } catch (error) {
+      this.logger.debug('Human browsing simulation error:', error.message);
+    }
+  }
+
+  async humanLikeTyping(selector, text) {
+    try {
+      // Focus the field first
+      await this.browserManager.page.focus(selector);
+      await this.browserManager.humanLikeDelay(200, 500);
+      
+      // Clear any existing text
+      await this.browserManager.page.click(selector, { clickCount: 3 });
+      await this.browserManager.humanLikeDelay(100, 300);
+      
+      // Type with realistic delays and occasional typos
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        
+        // Occasional typing mistakes (1% chance)
+        if (Math.random() < 0.01 && i > 0) {
+          // Type wrong character then backspace
+          const wrongChar = String.fromCharCode(97 + Math.floor(Math.random() * 26));
+          await this.browserManager.page.type(selector, wrongChar, { delay: 80 + Math.random() * 40 });
+          await this.browserManager.humanLikeDelay(200, 500);
+          await this.browserManager.page.keyboard.press('Backspace');
+          await this.browserManager.humanLikeDelay(100, 300);
+        }
+        
+        // Type the correct character
+        await this.browserManager.page.type(selector, char, { 
+          delay: 80 + Math.random() * 120 
+        });
+        
+        // Vary typing speed
+        if (char === ' ' || '.@-'.includes(char)) {
+          await this.browserManager.humanLikeDelay(150, 400);
+        } else {
+          await this.browserManager.humanLikeDelay(50, 200);
+        }
+      }
+    } catch (error) {
+      this.logger.warn(`Human-like typing failed for ${selector}:`, error.message);
+      // Fallback to regular typing
+      await this.browserManager.page.type(selector, text, { delay: 100 });
     }
   }
 
@@ -115,19 +257,62 @@ export class LinkedInScraper {
         throw new Error('Invalid LinkedIn profile URL provided');
       }
 
-      // Navigate to profile
-      await this.browserManager.navigateToPage(profileUrl);
+      // Use retry mechanism for navigation
+      await this.retry(async () => {
+        await this.browserManager.navigateToPage(profileUrl, 'networkidle0');
+        
+        // Check if we got blocked
+        const currentUrl = await this.browserManager.getCurrentUrl();
+        const pageContent = await this.browserManager.page.content();
+        
+        if (pageContent.includes('blocked') || pageContent.includes('999') || currentUrl.includes('authwall')) {
+          throw new Error('LinkedIn blocked the request - retrying with different approach');
+        }
+        
+        // Additional human-like behavior after navigation
+        await this.simulateHumanBrowsing();
+      });
+
       await this.rateLimiter.delay();
 
-      // Extract profile metadata
-      this.profileMetadata = await this.contentExtractor.extractProfileMetadata(this.browserManager.page);
+      // Extract profile metadata with error handling
+      try {
+        this.profileMetadata = await this.contentExtractor.extractProfileMetadata(this.browserManager.page);
+      } catch (error) {
+        this.logger.warn('Could not extract full profile metadata:', error.message);
+        this.profileMetadata = { name: 'Unknown', url: profileUrl };
+      }
       
-      // Navigate to recent activity/posts
+      // Navigate to recent activity/posts with authentication check
       const activityUrl = profileUrl.replace(/\/$/, '') + '/recent-activity/all/';
-      await this.browserManager.navigateToPage(activityUrl);
+      this.logger.info(`Navigating to activity page: ${activityUrl}`);
+      
+      await this.retry(async () => {
+        await this.browserManager.navigateToPage(activityUrl, 'networkidle0');
+        
+        // Check for authentication requirement
+        const currentUrl = await this.browserManager.getCurrentUrl();
+        const pageContent = await this.browserManager.page.content();
+        
+        if (currentUrl.includes('authwall') || currentUrl.includes('login')) {
+          if (!this.isAuthenticated) {
+            throw new Error('Authentication required to access activity page. Please provide LinkedIn credentials.');
+          } else {
+            throw new Error('Authentication session may have expired');
+          }
+        }
+        
+        if (pageContent.includes('blocked') || pageContent.includes('999')) {
+          throw new Error('Activity page blocked - trying alternative approach');
+        }
+        
+        // Additional delay and behavior simulation
+        await this.simulateActivityPageBrowsing();
+      });
+
       await this.rateLimiter.delay();
 
-      // Scroll and load all posts
+      // Scroll and load all posts with enhanced error handling
       await this.loadAllPosts();
 
       // Extract post data
@@ -143,7 +328,81 @@ export class LinkedInScraper {
 
     } catch (error) {
       this.logger.error('Profile scraping failed:', error.message);
+      
+      // Try alternative scraping approach if main method fails
+      if (error.message.includes('blocked') || error.message.includes('999')) {
+        this.logger.info('Attempting alternative scraping approach...');
+        return await this.alternativeScrapingApproach(profileUrl);
+      }
+      
       throw error;
+    }
+  }
+
+  async simulateActivityPageBrowsing() {
+    try {
+      // Simulate reading the activity page
+      await this.browserManager.humanLikeDelay(3000, 5000);
+      
+      // Scroll a bit to simulate interest
+      await this.browserManager.humanLikeScroll(300);
+      await this.browserManager.humanLikeDelay(2000, 3000);
+      
+      // Move mouse to simulate reading posts
+      await this.browserManager.page.mouse.move(
+        400 + Math.random() * 400,
+        300 + Math.random() * 400
+      );
+      
+      await this.browserManager.humanLikeDelay(1000, 2000);
+    } catch (error) {
+      this.logger.debug('Activity page browsing simulation error:', error.message);
+    }
+  }
+
+  async alternativeScrapingApproach(profileUrl) {
+    try {
+      this.logger.info('Using alternative scraping approach...');
+      
+      // Try accessing profile posts through different URL patterns
+      const alternativeUrls = [
+        profileUrl.replace(/\/$/, '') + '/detail/recent-activity/shares/',
+        profileUrl.replace(/\/$/, '') + '/detail/recent-activity/',
+        profileUrl.replace(/\/$/, '') + '/'
+      ];
+      
+      for (const altUrl of alternativeUrls) {
+        try {
+          this.logger.info(`Trying alternative URL: ${altUrl}`);
+          
+          await this.retry(async () => {
+            await this.browserManager.navigateToPage(altUrl, 'networkidle0');
+            await this.simulateHumanBrowsing();
+          });
+          
+          // Check if we can extract any content
+          const posts = await this.contentExtractor.extractPosts(
+            this.browserManager.page, 
+            Math.min(this.options.maxPosts || 10, 10) // Limit to 10 posts for alternative approach
+          );
+          
+          if (posts.length > 0) {
+            this.scrapedData = posts;
+            this.logger.info(`Alternative approach succeeded: ${posts.length} posts extracted`);
+            return posts;
+          }
+          
+        } catch (error) {
+          this.logger.debug(`Alternative URL failed: ${altUrl} - ${error.message}`);
+          continue;
+        }
+      }
+      
+      throw new Error('All alternative scraping approaches failed');
+      
+    } catch (error) {
+      this.logger.error('Alternative scraping approach failed:', error.message);
+      return []; // Return empty array instead of throwing
     }
   }
 

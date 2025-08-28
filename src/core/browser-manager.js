@@ -98,41 +98,104 @@ export class BrowserManager {
   }
 
   async setupAntiDetection() {
-    // Remove automation indicators
+    // Enhanced anti-detection measures
     await this.page.evaluateOnNewDocument(() => {
-      // Remove webdriver property
-      delete window.navigator.webdriver;
-      
-      // Mock permissions
-      const originalQuery = window.navigator.permissions.query;
-      window.navigator.permissions.query = (parameters) => (
-        parameters.name === 'notifications' ?
-          Promise.resolve({ state: Notification.permission }) :
-          originalQuery(parameters)
-      );
+      // Remove webdriver property completely
+      Object.defineProperty(navigator, 'webdriver', {
+        get: () => undefined,
+        configurable: true
+      });
 
-      // Mock plugins
+      // Mock chrome runtime
+      window.chrome = {
+        runtime: {
+          onConnect: undefined,
+          onMessage: undefined
+        }
+      };
+
+      // Mock permissions with more realistic responses
+      const originalQuery = window.navigator.permissions.query;
+      window.navigator.permissions.query = (parameters) => {
+        const permissionStatus = {
+          'notifications': 'default',
+          'geolocation': 'default',
+          'camera': 'default',
+          'microphone': 'default'
+        };
+        return Promise.resolve({ 
+          state: permissionStatus[parameters.name] || 'default' 
+        });
+      };
+
+      // Enhanced plugin mocking
       Object.defineProperty(navigator, 'plugins', {
         get: () => [
           {
-            0: {
-              type: "application/x-google-chrome-pdf",
-              suffixes: "pdf",
-              description: "",
-              enabledPlugin: Plugin
-            },
+            0: { type: "application/x-google-chrome-pdf", suffixes: "pdf", description: "", enabledPlugin: Plugin },
             description: "Portable Document Format",
             filename: "internal-pdf-viewer",
             length: 1,
             name: "Chrome PDF Plugin"
+          },
+          {
+            0: { type: "application/x-nacl", suffixes: "nexe", description: "Native Client Executable", enabledPlugin: Plugin },
+            1: { type: "application/x-pnacl", suffixes: "pexe", description: "Portable Native Client Executable", enabledPlugin: Plugin },
+            description: "Native Client",
+            filename: "internal-nacl-plugin",
+            length: 2,
+            name: "Native Client"
           }
         ],
+        configurable: true
       });
 
-      // Mock languages
-      Object.defineProperty(navigator, 'languages', {
-        get: () => ['en-US', 'en']
+      // Mock hardware concurrency
+      Object.defineProperty(navigator, 'hardwareConcurrency', {
+        get: () => 4
       });
+
+      // Mock device memory
+      Object.defineProperty(navigator, 'deviceMemory', {
+        get: () => 8
+      });
+
+      // Mock connection
+      Object.defineProperty(navigator, 'connection', {
+        get: () => ({
+          effectiveType: '4g',
+          rtt: 100,
+          downlink: 10
+        })
+      });
+
+      // Mock screen properties
+      Object.defineProperty(screen, 'colorDepth', { get: () => 24 });
+      Object.defineProperty(screen, 'pixelDepth', { get: () => 24 });
+
+      // Mock timezone
+      Intl.DateTimeFormat = class extends Intl.DateTimeFormat {
+        constructor() {
+          super();
+          this.resolvedOptions = () => ({ timeZone: 'America/New_York' });
+        }
+      };
+
+      // Remove automation flags
+      delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
+      delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
+      delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
+    });
+
+    // Additional stealth measures
+    await this.page.setJavaScriptEnabled(true);
+    
+    // Randomize viewport slightly
+    const viewport = this.options.viewport;
+    const randomOffset = () => Math.floor(Math.random() * 10) - 5;
+    await this.page.setViewport({
+      width: viewport.width + randomOffset(),
+      height: viewport.height + randomOffset()
     });
   }
 
