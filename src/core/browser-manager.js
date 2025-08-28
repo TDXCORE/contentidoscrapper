@@ -1,7 +1,6 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import AdblockerPlugin from 'puppeteer-extra-plugin-adblocker';
-import UserAgent from 'user-agents';
 import { Logger } from '../utils/logger.js';
 
 puppeteer.use(StealthPlugin());
@@ -9,11 +8,14 @@ puppeteer.use(AdblockerPlugin({ blockTrackers: true }));
 
 export class BrowserManager {
   constructor(options = {}) {
+    // Default reliable User Agent
+    const defaultUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    
     this.options = {
       headless: options.headless ?? 'new',
       timeout: options.timeout ?? 30000,
       viewport: options.viewport ?? { width: 1366, height: 768 },
-      userAgent: options.userAgent ?? new UserAgent().toString(),
+      userAgent: options.userAgent ?? defaultUserAgent,
       antiDetection: options.antiDetection ?? true,
       ...options
     };
@@ -52,8 +54,20 @@ export class BrowserManager {
       this.browser = await puppeteer.launch(launchOptions);
       this.page = await this.browser.newPage();
 
-      // Set user agent
-      await this.page.setUserAgent(this.options.userAgent);
+      // Set user agent with validation
+      const userAgent = this.options.userAgent;
+      if (typeof userAgent === 'string' && userAgent.trim().length > 0) {
+        try {
+          await this.page.setUserAgent(userAgent.trim());
+          this.logger.info(`User agent set: ${userAgent.substring(0, 50)}...`);
+        } catch (error) {
+          this.logger.warn(`Failed to set user agent, using default: ${error.message}`);
+          await this.page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+        }
+      } else {
+        this.logger.warn('Invalid user agent provided, using default');
+        await this.page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+      }
 
       // Set viewport
       await this.page.setViewport(this.options.viewport);
