@@ -3,6 +3,7 @@ import { ContentExtractor } from './content-extractor.js';
 import { RateLimiter } from '../utils/rate-limiter.js';
 import { Logger } from '../utils/logger.js';
 import { ExportManager } from '../exporters/export-manager.js';
+import { JigsawStackFallback } from '../services/jigsawstack-fallback.js';
 
 export class LinkedInScraper {
   constructor(options = {}) {
@@ -23,9 +24,13 @@ export class LinkedInScraper {
     this.rateLimiter = new RateLimiter();
     this.logger = new Logger('LinkedInScraper');
     this.exportManager = new ExportManager();
+    this.jigsawStackFallback = new JigsawStackFallback({
+      apiKey: this.options.jigsawstackApiKey
+    });
     this.isAuthenticated = false;
     this.scrapedData = [];
     this.profileMetadata = {};
+    this.useFallback = this.options.useFallback ?? true;
   }
 
   async initialize() {
@@ -330,9 +335,21 @@ export class LinkedInScraper {
       this.logger.error('Profile scraping failed:', error.message);
       
       // Try alternative scraping approach if main method fails
-      if (error.message.includes('blocked') || error.message.includes('999')) {
+      if (error.message.includes('blocked') || error.message.includes('999') || error.message.includes('timeout')) {
         this.logger.info('Attempting alternative scraping approach...');
-        return await this.alternativeScrapingApproach(profileUrl);
+        try {
+          const altPosts = await this.alternativeScrapingApproach(profileUrl);
+          if (altPosts.length > 0) {
+            return altPosts;
+          }
+        } catch (altError) {
+          this.logger.warn('Alternative scraping approach also failed:', altError.message);
+        }
+
+        // If alternative approach fails and fallback is enabled, try JigsawStack
+        if (this.useFallback) {
+          return await this.tryJigsawStackFallback(profileUrl);
+        }
       }
       
       throw error;
@@ -404,6 +421,63 @@ export class LinkedInScraper {
       this.logger.error('Alternative scraping approach failed:', error.message);
       return []; // Return empty array instead of throwing
     }
+  }
+
+  async tryJigsawStackFallback(profileUrl) {
+    try {
+      this.logger.info('🔧 Attempting JigsawStack fallback for LinkedIn scraping...');
+      
+      if (!this.jigsawStackFallback) {
+        throw new Error('JigsawStack fallback service not initialized');
+      }
+
+      const result = await this.jigsawStackFallback.scrapeLinkedInProfile(profileUrl);
+      
+      if (result.success) {
+        this.logger.info(`✅ JigsawStack fallback succeeded! Extracted ${result.posts.length} posts`);
+        
+        // Update our internal data structures
+        this.profileMetadata = result.profileMetadata;
+        this.scrapedData = result.posts;
+        
+        // Add metadata indicating this was scraped via fallback
+        this.profileMetadata.scrapedVia = 'jigsawstack-fallback';
+        this.profileMetadata.fallbackUsed = true;
+        this.profileMetadata.originalMethod = 'puppeteer-failed';
+        
+        return result.posts;
+      } else {
+        throw new Error(`JigsawStack fallback failed: ${result.error}`);
+      }
+      
+    } catch (error) {
+      this.logger.error('❌ JigsawStack fallback failed:', error.message);
+      
+      // Return minimal data rather than failing completely
+      return this.createMinimalProfileData(profileUrl, error.message);
+    }
+  }
+
+  createMinimalProfileData(profileUrl, errorMessage) {
+    this.logger.warn('Creating minimal profile data due to all scraping methods failing');
+    
+    // Extract basic info from URL
+    const profileUsername = profileUrl.split('/in/')[1]?.replace('/', '') || 'unknown';
+    
+    this.profileMetadata = {
+      name: profileUsername.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      url: profileUrl,
+      username: profileUsername,
+      scrapedAt: new Date().toISOString(),
+      scrapedVia: 'minimal-fallback',
+      error: errorMessage,
+      fallbackUsed: true,
+      dataLimited: true
+    };
+    
+    // Return empty posts array but don't throw
+    this.scrapedData = [];
+    return [];
   }
 
   async loadAllPosts() {

@@ -128,6 +128,20 @@
             "description": "Use stealth techniques to avoid detection",
             "default": true,
             "editor": "checkbox"
+        },
+        "jigsawstackApiKey": {
+            "title": "JigsawStack API Key (Optional)",
+            "type": "string",
+            "description": "JigsawStack API key for fallback scraping when primary methods fail",
+            "editor": "textfield",
+            "isSecret": true
+        },
+        "useFallback": {
+            "title": "Enable Fallback Scraping",
+            "type": "boolean",
+            "description": "Use JigsawStack API as fallback when primary scraping fails",
+            "default": true,
+            "editor": "checkbox"
         }
     },
     "anyOf": [

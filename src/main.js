@@ -75,7 +75,9 @@ Actor.main(async () => {
         delay: input.delay || 2000,
         maxRetries: input.maxRetries || 3,
         timeout: input.timeout || 30000,
-        antiDetection: input.antiDetection ?? true
+        antiDetection: input.antiDetection ?? true,
+        jigsawstackApiKey: input.jigsawstackApiKey || process.env.JIGSAWSTACK_API_KEY,
+        useFallback: input.useFallback ?? true
     };
 
     const scraper = new LinkedInScraper(scraperOptions);
@@ -148,6 +150,9 @@ Actor.main(async () => {
             exportFormats: Object.keys(exportResults),
             scrapingDuration: Date.now() - Actor.getEnv().startedAt,
             completedAt: new Date().toISOString(),
+            scrapingMethod: scrapedData.metadata.scrapedVia || 'standard-puppeteer',
+            fallbackUsed: scrapedData.metadata.fallbackUsed || false,
+            dataLimited: scrapedData.metadata.dataLimited || false,
             statistics: {
                 totalReactions: posts.reduce((sum, post) => sum + (post.reactions || 0), 0),
                 totalComments: posts.reduce((sum, post) => sum + (post.comments || 0), 0),

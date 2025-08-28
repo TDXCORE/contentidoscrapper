@@ -1,0 +1,18 @@
+{
+    "profileUrl": "https://www.linkedin.com/in/jothi-moorthy/",
+    "email": "freddyrincones@gmail.com",
+    "password": "050986Fers*.",
+    "maxPosts": 15,
+    "exportFormat": "json",
+    "headless": true,
+    "delay": 3000,
+    "maxRetries": 5,
+    "timeout": 45000,
+    "antiDetection": true,
+    "includeMedia": true,
+    "includeEngagement": true,
+    "includeHashtags": true,
+    "includeMentions": true,
+    "useFallback": true,
+    "jigsawstackApiKey": "your-jigsawstack-api-key-here"
+}

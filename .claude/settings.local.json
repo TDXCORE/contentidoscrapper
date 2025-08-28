@@ -4,7 +4,10 @@
       "Bash(mkdir:*)",
       "Bash(git push:*)",
       "Bash(git add:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(node:*)",
+      "WebFetch(domain:jigsawstack.com)",
+      "WebFetch(domain:www.npmjs.com)"
     ],
     "deny": [],
     "ask": []
