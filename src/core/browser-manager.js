@@ -149,10 +149,7 @@ export class BrowserManager {
         throw new Error(`Failed to load page: ${response?.status()} ${response?.statusText()}`);
       }
 
-      // Wait for page to be fully loaded
-      await this.page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {
-        this.logger.warn('Network idle timeout - continuing anyway');
-      });
+      // Page is already loaded with networkidle0 from goto() - no additional wait needed
 
       return response;
     } catch (error) {
