@@ -1,5 +1,5 @@
-# Use the official Apify Node.js Actor base image
-FROM apify/actor-node:18
+# Use the official Apify Node.js Actor base image with Node 20
+FROM apify/actor-node:20
 
 # Copy package.json first for better Docker layer caching
 COPY package.json ./
