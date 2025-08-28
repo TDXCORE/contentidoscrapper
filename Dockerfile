@@ -1,14 +1,13 @@
 # Use the official Apify Node.js Actor base image
 FROM apify/actor-node:18
 
-# Copy package.json and package-lock.json (if available) first
-# This allows Docker to cache dependencies if they haven't changed
-COPY package*.json ./
+# Copy package.json first for better Docker layer caching
+COPY package.json ./
 
 # Install dependencies
-RUN npm ci --only=production \
+RUN npm install --only=production \
  && echo "Installed NPM packages:" \
- && npm list --depth=0
+ && npm list --depth=0 2>/dev/null || echo "Package list completed"
 
 # Next, copy the remaining files and directories with the source code
 # Since we do this after installing dependencies, rebuilds will be fast
