@@ -1,10 +1,11 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { PuppeteerBlocker } from '@ghostery/adblocker-puppeteer';
+import AdblockerPlugin from 'puppeteer-extra-plugin-adblocker';
 import UserAgent from 'user-agents';
 import { Logger } from '../utils/logger.js';
 
 puppeteer.use(StealthPlugin());
+puppeteer.use(AdblockerPlugin({ blockTrackers: true }));
 
 export class BrowserManager {
   constructor(options = {}) {
@@ -50,15 +51,6 @@ export class BrowserManager {
 
       this.browser = await puppeteer.launch(launchOptions);
       this.page = await this.browser.newPage();
-
-      // Setup adblocker
-      try {
-        const blocker = await PuppeteerBlocker.fromPrebuiltAdsAndTracking();
-        await blocker.enableBlockingInPage(this.page);
-        this.logger.info('Adblocker enabled');
-      } catch (error) {
-        this.logger.warn('Failed to enable adblocker:', error.message);
-      }
 
       // Set user agent
       await this.page.setUserAgent(this.options.userAgent);

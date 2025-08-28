@@ -37,7 +37,7 @@
     "puppeteer": "^23.9.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
-    "@ghostery/adblocker-puppeteer": "^1.34.0",
+    "puppeteer-extra-plugin-adblocker": "^2.13.6",
     "exceljs": "^4.4.0",
     "csv-writer": "^1.6.0",
     "commander": "^12.0.0",
